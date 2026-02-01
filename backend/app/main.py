@@ -690,9 +690,9 @@ async def get_intelligence(
 # 404 HANDLER
 # ============================================================================
 
-@app.route("/{path:path}")
-async def catch_all(path: str, request: Request):
-    """Catch-all route for undefined endpoints"""
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """Custom 404 handler"""
     request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -700,7 +700,7 @@ async def catch_all(path: str, request: Request):
             "success": False,
             "error": {
                 "code": "NOT_FOUND",
-                "message": f"Route {request.method} /{path} not found",
+                "message": f"Route {request.method} {request.url.path} not found",
             },
             "meta": {
                 "request_id": request_id,
