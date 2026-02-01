@@ -1,0 +1,6 @@
+
+{
+  "name": "ScamGuard AI",
+  "description": "A privacy-first scam detection and safe-engagement dashboard powered by Gemini AI, featuring real-time risk analysis and agentic stalling replies.",
+  "requestFramePermissions": []
+}
