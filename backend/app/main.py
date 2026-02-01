@@ -239,6 +239,59 @@ async def root():
         uptime_seconds=time.time(),
         timestamp=datetime.utcnow().isoformat() + "Z",
     )
+@app.post("/", tags=["GUVI"])
+async def guvi_root_entrypoint(
+    request: Request,
+    api_key: str = Depends(verify_api_key),
+):
+    """
+    GUVI Evaluation Entry Point
+    Accepts simple JSON:
+    {
+        "message": "scam message here"
+    }
+    """
+    start_time = time.time()
+    request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
+
+    body = await request.json()
+
+    if "message" not in body:
+        raise HTTPException(status_code=400, detail="INVALID_REQUEST_BODY")
+
+    message = body["message"]
+
+    detector = get_detector()
+    detection = detector.analyze(message)
+    result = detector.to_analysis_result(detection)
+
+    processing_time_ms = int((time.time() - start_time) * 1000)
+
+    return {
+        "success": True,
+        "data": {
+            "risk_level": result.risk_level.value,
+            "score": result.score,
+            "classification": result.classification,
+            "reasoning": result.reasoning,
+            "entities": [
+                {
+                    "type": e.type,
+                    "value": e.value,
+                    "confidence": e.confidence
+                }
+                for e in result.entities
+            ],
+            "suggested_reply": result.suggested_reply,
+            "agent_state": result.agent_state.value,
+        },
+        "meta": {
+            "request_id": request_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "processing_time_ms": processing_time_ms,
+        },
+    }
+
 
 
 @app.get("/health", response_model=HealthCheckResponse, tags=["Health"])
